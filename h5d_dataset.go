@@ -79,8 +79,26 @@ func (s *Dataset) ReadSubset(data interface{}, memspace, filespace *Dataspace) e
 		addr = unsafe.Pointer(slice.Data)
 
 	case reflect.String:
-		str := (*reflect.StringHeader)(unsafe.Pointer(v.UnsafeAddr()))
-		addr = unsafe.Pointer(str.Data)
+		//		str := (*reflect.StringHeader)(unsafe.Pointer(v.UnsafeAddr()))
+		//		addr = unsafe.Pointer(str.Data)
+		dtype, err := copyDatatype(s.Datatype())
+		if err != nil {
+			return fmt.Errorf("hdf5: could not access attribute datatype: %v", err)
+		}
+		defer dtype.Close()
+
+		dlen := dtype.Size()
+		cstr := (*C.char)(unsafe.Pointer(C.malloc(C.ulong(uint(unsafe.Sizeof(byte(0))) * (dlen + 1)))))
+		defer C.free(unsafe.Pointer(cstr))
+		switch {
+		case C.H5Tis_variable_str(dtype.Identifier.id) != 0:
+			addr = unsafe.Pointer(&cstr)
+		default:
+			addr = unsafe.Pointer(cstr)
+		}
+		defer func() {
+			v.SetString(C.GoString(cstr))
+		}()
 
 	case reflect.Ptr:
 		addr = unsafe.Pointer(v.Pointer())
