@@ -13,7 +13,7 @@ matrix:
  allow_failures:
    - go: master
 
-go_import_path: gonum.org/v1/hdf5
+go_import_path: github.com/llamentowski/hdf5
 
 sudo: false
 
