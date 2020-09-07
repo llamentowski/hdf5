@@ -81,7 +81,7 @@ func (s *Dataset) ReadSubset(data interface{}, memspace, filespace *Dataspace) e
 	case reflect.String:
 		//		str := (*reflect.StringHeader)(unsafe.Pointer(v.UnsafeAddr()))
 		//		addr = unsafe.Pointer(str.Data)
-		dtype, err := copyDatatype(s.Datatype())
+		dtype, err := s.Datatype()
 		if err != nil {
 			return fmt.Errorf("hdf5: could not access attribute datatype: %v", err)
 		}
