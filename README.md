@@ -3,6 +3,8 @@
 #[![Build Status](https://secure.travis-ci.org/gonum/hdf5.png)](http://travis-ci.org/gonum/hdf5)
 #[![GoDoc](https://godoc.org/gonum.org/v1/hdf5?status.svg)](https://godoc.org/gonum.org/v1/hdf5)
 
+**NOTE** This is a fork of original gonum.org/v1/hdf5 library, correcting the error with reading variable length UTF-8 datasets
+
 Naive ``cgo`` bindings for the ``C-API`` of ``hdf5``.
 
 **WIP: No stable API for this package yet.**
