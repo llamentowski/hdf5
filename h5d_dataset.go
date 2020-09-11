@@ -77,28 +77,20 @@ func (s *Dataset) ReadSubset(data interface{}, memspace, filespace *Dataspace) e
 	case reflect.Slice:
 		slice := (*reflect.SliceHeader)(unsafe.Pointer(v.UnsafeAddr()))
 		addr = unsafe.Pointer(slice.Data)
-
+	// variable string case needs different handling for variable length type UTF-8 and static ASCII only strings
 	case reflect.String:
-		//		str := (*reflect.StringHeader)(unsafe.Pointer(v.UnsafeAddr()))
-		//		addr = unsafe.Pointer(str.Data)
-		dtype, err := s.Datatype()
-		if err != nil {
-			return fmt.Errorf("hdf5: could not access attribute datatype: %v", err)
-		}
-		defer dtype.Close()
-
-		dlen := dtype.Size()
-		cstr := (*C.char)(unsafe.Pointer(C.malloc(C.ulong(uint(unsafe.Sizeof(byte(0))) * (dlen + 1)))))
-		defer C.free(unsafe.Pointer(cstr))
-		switch {
-		case C.H5Tis_variable_str(dtype.Identifier.id) != 0:
+		if C.H5Tis_variable_str(dtype.Identifier.id) == 0 {
+			str := (*reflect.StringHeader)(unsafe.Pointer(v.UnsafeAddr()))
+			addr = unsafe.Pointer(str.Data)
+		} else {
+			dlen := dtype.Size()
+			cstr := (*C.char)(unsafe.Pointer(C.malloc(C.ulong(uint(unsafe.Sizeof(byte(0))) * (dlen + 1)))))
+			defer C.free(unsafe.Pointer(cstr))
 			addr = unsafe.Pointer(&cstr)
-		default:
-			addr = unsafe.Pointer(cstr)
+			defer func() {
+				v.SetString(C.GoString(cstr))
+			}()
 		}
-		defer func() {
-			v.SetString(C.GoString(cstr))
-		}()
 
 	case reflect.Ptr:
 		addr = unsafe.Pointer(v.Pointer())
@@ -114,7 +106,9 @@ func (s *Dataset) ReadSubset(data interface{}, memspace, filespace *Dataspace) e
 	if filespace != nil {
 		filespace_id = filespace.id
 	}
+
 	rc := C.H5Dread(s.id, dtype.id, memspace_id, filespace_id, 0, addr)
+
 	err = h5err(rc)
 	return err
 }
